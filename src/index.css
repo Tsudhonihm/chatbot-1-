@@ -1,0 +1,82 @@
+/* TailwindCSS Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Root Variables */
+:root {
+  --font-handwritten: 'Indie Flower', cursive;
+}
+
+/* Global Styles */
+h1 {
+  font-family: var(--font-handwritten);
+}
+
+/* Favicon Animation */
+@keyframes faviconFade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+link[rel="icon"] {
+  animation: faviconFade 2s ease-in-out infinite;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Utility Classes */
+.auto-type {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2563eb;
+  min-height: 2rem;
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* Chat Bubble Styles */
+.chat-bubble {
+  max-width: 70%;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 5px;
+}
+
+.message-sender {
+  background-color: #f0f0f0; /* Light gray background */
+  color: black; /* Black text for visibility */
+  align-self: flex-end; /* Align to the right */
+}
+
+.message-receiver {
+  background-color: #1e3c72; /* Dark blue background */
+  color: white; /* White text for visibility */
+  align-self: flex-start; /* Align to the left */
+}
