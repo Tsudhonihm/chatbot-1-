@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
 import { MessageCircle, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -25,9 +26,6 @@ interface Message {
   timestamp: Date;
 }
 
-// API URL for production
-const API_URL = 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium';
-
 function App() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -42,64 +40,63 @@ function App() {
     scrollToBottom();
   }, [messages]);
 
-const handleSend = async () => {
-  if (!input.trim() || isLoading) return;
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
 
-  const userSender = import.meta.env.PROD ? 'Me' : 'Me';
+    // Add user message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: input.trim(),
+      sender: 'Me',
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
 
-  const userMessage: Message = {
-    id: Date.now().toString(),
-    text: input.trim(),
-    sender: userSender,
-    timestamp: new Date(),
-  };
-
-  setMessages((prev) => [...prev, userMessage]);
-  setInput('');
-  setIsLoading(true);
-
-  try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${import.meta.env.VITE_HUGGINGFACE_API_KEY}`,
-      },
-      body: JSON.stringify({
-        inputs: input.trim(),
-        parameters: {
-          temperature: 0.7, // Controls randomness
-          max_tokens: 100,   // Limits response length
-          top_p: 0.8,       // Controls diversity
-          repetition_penalty: 1.6 // Reduces repetition
+    try {
+      // Call Hugging Face API
+      const response = await fetch('https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_HUGGINGFACE_API_KEY}`,
         },
-      }),
-    });
+        body: JSON.stringify({
+          inputs: input.trim(),
+          parameters: {
+            temperature: 0.9,
+            max_tokens: 125,
+            top_p: 0.9,
+            repetition_penalty: 1.5,
+          },
+        }),
+      });
 
-    const data = await response.json();
-    const botResponse = data[0]?.generated_text || "I couldn't process that request.";
+      const data = await response.json();
+      const botResponse = data[0]?.generated_text || "I couldn't process that request.";
 
-    const botMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      text: botResponse,
-      sender: 'Bot',
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, botMessage]);
-  } catch (error) {
-    console.error('Error fetching bot response:', error);
-    const errorMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      text: "Sorry, I encountered an error. Please try again.",
-      sender: 'Bot',
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, errorMessage]);
-  } finally {
-    setIsLoading(false);
-  }
-};
+      // Add bot message
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: botResponse,
+        sender: 'Bot',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Error fetching bot response:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Sorry, I encountered an error. Please try again.",
+        sender: 'Bot',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200">
@@ -165,6 +162,7 @@ const handleSend = async () => {
               </div>
             </div>
           </div>
+
           {/* Bottom Bar with Centered Content */}
           <div className="flex flex-col items-center justify-center px-6 py-4 border-t border-gray-100 space-y-3">
             <motion.div
@@ -194,6 +192,7 @@ const handleSend = async () => {
             </motion.div>
           </div>
         </div>
+
         {/* Chat Container */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -201,6 +200,21 @@ const handleSend = async () => {
           transition={{ duration: 0.8 }}
           className="bg-white rounded-lg shadow-lg overflow-hidden"
         >
+          {/* Chat Header */}
+          <div className="bg-blue-600 p-3 flex items-center gap-2">
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <MessageCircle
+                className="text-white align-middle"
+                size={20}
+                style={{ marginRight: '8px', transform: 'rotate(0deg)' }}
+              />
+            </motion.div>
+            <h2 className="text-lg font-semibold text-white align-middle">Chat with Bot</h2>
+          </div>
+
           {/* Messages Container */}
           <div
             ref={messagesContainerRef}
@@ -249,6 +263,7 @@ const handleSend = async () => {
               </motion.div>
             )}
           </div>
+
           {/* Input Area */}
           <div className="border-t p-4 bg-gray-50">
             <div className="flex gap-2">
@@ -257,14 +272,14 @@ const handleSend = async () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Type your message..."
-                className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Go ahead and type something..."
+                className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-500"
                 disabled={isLoading}
               />
               <motion.button
                 onClick={handleSend}
                 disabled={isLoading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -275,8 +290,9 @@ const handleSend = async () => {
           </div>
         </motion.div>
       </div>
+
       {/* Footer */}
-      <footer className="text-center text-gray-600 mt-8 pb-4">
+      <footer className="text-center text-white-600 mt-8 pb-4">
         © 2025 Anything Boes Design Studio. All rights reserved.
       </footer>
     </div>
