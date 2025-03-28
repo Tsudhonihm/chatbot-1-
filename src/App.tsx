@@ -22,7 +22,7 @@ const HandDrawnInstagram = () => (
 interface Message {
   id: string;
   text: string;
-  sender: 'Me' | 'Bot'; // Updated to use "Me" instead of "user"
+  sender: 'Me' | 'Bot';
   timestamp: Date;
 }
 
@@ -31,6 +31,7 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [linkError, setLinkError] = useState(false);
 
   const scrollToBottom = () => {
     messagesContainerRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -43,7 +44,6 @@ function App() {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       text: input.trim(),
@@ -55,7 +55,6 @@ function App() {
     setIsLoading(true);
 
     try {
-      // Call Hugging Face API
       const response = await fetch('https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct', {
         method: 'POST',
         headers: {
@@ -76,7 +75,6 @@ function App() {
       const data = await response.json();
       const botResponse = data[0]?.generated_text || "I couldn't process that request.";
 
-      // Add bot message
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: botResponse,
@@ -95,6 +93,17 @@ function App() {
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleBoesHubClick = (e) => {
+    e.preventDefault();
+    const newWindow = window.open('https://sites.google.com/view/anythingboes', '_blank');
+    
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      // Fallback if popup is blocked
+      setLinkError(true);
+      window.location.href = 'https://sites.google.com/view/anythingboes';
     }
   };
 
@@ -139,21 +148,22 @@ function App() {
                     <HandDrawnInstagram />
                   </motion.a>
                 </div>
-                {/* Penny Button */}
+                {/* Penny Button - Updated with error handling */}
                 <motion.a
-                  href="https://sites.google.com/view/anythingboes/the-boes-base"
+                  href="https://sites.google.com/view/anythingboes"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="relative group perspective-1000"
                   whileHover={{ scale: 1.05, rotateY: 10 }}
                   whileTap={{ scale: 0.95 }}
+                  onClick={handleBoesHubClick}
                 >
                   <div className="w-24 h-24 rounded-full relative transform-gpu transition-all duration-300 group-hover:rotate-12">
                     <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 via-amber-300 to-amber-600 shadow-[inset_0_0_15px_rgba(0,0,0,0.6)] transform-gpu transition-transform duration-300" />
                     <div className="absolute inset-0 rounded-full bg-gradient-to-tl from-transparent via-amber-200 to-transparent opacity-30" />
                     <div className="absolute inset-2 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center overflow-hidden">
                       <span className="text-amber-100 font-bold text-sm text-center leading-tight">
-                        Visit<br />Boes Hub
+                        {linkError ? 'Try Again' : 'Visit Boes Hub'}
                       </span>
                     </div>
                     <div className="absolute inset-0 rounded-full border-4 border-amber-300 opacity-20" />
