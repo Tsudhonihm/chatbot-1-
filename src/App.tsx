@@ -55,7 +55,7 @@ function App() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct', {
+      const response = await fetch('https://api-inference.huggingface.co/models/microsoft/Phi-3-mini-4k-instruct', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +65,7 @@ function App() {
           inputs: input.trim(),
           parameters: {
             temperature: 0.9,
-            max_tokens: 125,
+            max_tokens: 150,
             top_p: 0.9,
             repetition_penalty: 1.5,
           },
